@@ -9,9 +9,8 @@ import "dotenv/config"; // Environment variable loading (Node.js: Server Setup)
 import app from "./src/app.js";
 import connectDB from "./src/config/db.config.js";
 
-import dns from 'dns';
-dns.setDefaultResultOrder('ipv4first');
-
+import dotenv from 'dotenv';
+dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 

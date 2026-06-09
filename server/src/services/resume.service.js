@@ -11,7 +11,14 @@ const sanitizeSections = (sections) => {
 
   for (const field of arrayFields) {
     if (Array.isArray(cleaned[field])) {
-      cleaned[field] = cleaned[field].map(({ _id, ...rest }) => {
+      cleaned[field] = cleaned[field].map((item) => {
+        // Accept either objects or simple strings for certain arrays (e.g., certifications)
+        if (typeof item === 'string') {
+          if (field === 'certifications') return { name: item };
+          // fallback: wrap string in an object under a generic `value` key
+          return { value: item };
+        }
+        const { _id, ...rest } = item || {};
         if (_id && mongoose.Types.ObjectId.isValid(_id)) {
           return { _id, ...rest };
         }
@@ -70,7 +77,12 @@ export const updateSection = async (resumeId, userId, sectionName, sectionData) 
   const arrayFields = ['experience', 'education', 'projects', 'certifications'];
   let cleanData = sectionData;
   if (arrayFields.includes(sectionName) && Array.isArray(sectionData)) {
-    cleanData = sectionData.map(({ _id, ...rest }) => {
+    cleanData = sectionData.map((item) => {
+      if (typeof item === 'string') {
+        if (sectionName === 'certifications') return { name: item };
+        return { value: item };
+      }
+      const { _id, ...rest } = item || {};
       if (_id && mongoose.Types.ObjectId.isValid(_id)) {
         return { _id, ...rest };
       }
@@ -110,7 +122,7 @@ export const createFromUpload = async (userId, parsedSections, title = 'Uploaded
     userId,
     title,
     templateId: 'classic',
-    sections: parsedSections,
+    sections: sanitizeSections(parsedSections),
   });
   return resume;
 };

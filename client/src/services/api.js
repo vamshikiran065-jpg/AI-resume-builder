@@ -3,7 +3,7 @@
 // ============================================
 // Reference: fetch(), async/await - reference-javascript.md
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const fetchApi = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
@@ -18,12 +18,22 @@ const fetchApi = async (endpoint, options = {}) => {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    const networkError = new Error('Cannot reach the server. Please make sure the backend is running.');
+    networkError.cause = error;
+    throw networkError;
+  }
 
-  const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await response.json()
+    : { message: await response.text() };
 
   if (!response.ok) {
     const error = new Error(data.message || 'Request failed');
